@@ -3,16 +3,20 @@ from typing import Final
 from telegram import Update
 from telegram.ext import ContextTypes
 
+# Services
+from services.module.inventory.inventory_queries import get_all_inventory
+
 with open('configs/telegram.json', 'r') as config_file:
     config = json.load(config_file)
     
 BOT_USERNAME: Final = config['BOT_USERNAME']
 
-def handle_response(text: str)-> str :
+async def handle_response(text: str) -> str:
     val: str = text.lower()
 
     if '1' in val:
-        return 'Showing List Inventory :'
+        data = await get_all_inventory()
+        return data
     
     if '0' in val:
         return 'Are you sure want to exit this chat?'
@@ -28,11 +32,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message_type == 'group':
         if BOT_USERNAME in val:
             new_val: str = val.replace(BOT_USERNAME,'').strip()
-            res: str = handle_response(new_val)
+            res: str = await handle_response(new_val)
         else:
             return
     else:
-        res: str = handle_response(val)
+        res: str = await handle_response(val)
 
     print('Bot: ', res)
     await update.message.reply_text(res)
