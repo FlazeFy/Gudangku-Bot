@@ -1,0 +1,41 @@
+import json
+from typing import Final
+from telegram import Update
+from telegram.ext import ContextTypes
+
+with open('configs/telegram.json', 'r') as config_file:
+    config = json.load(config_file)
+    
+BOT_USERNAME: Final = config['BOT_USERNAME']
+
+def handle_response(text: str)-> str :
+    val: str = text.lower()
+
+    if '1' in val:
+        return 'Showing List Inventory :'
+    
+    if '0' in val:
+        return 'Are you sure want to exit this chat?'
+    
+    return 'Your message is not identified'
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message_type: str = update.message.chat.type
+    val: str = update.message.text
+
+    print(f'User ({update.message.chat.id}) in {message_type}: "{val}"')
+
+    if message_type == 'group':
+        if BOT_USERNAME in val:
+            new_val: str = val.replace(BOT_USERNAME,'').strip()
+            res: str = handle_response(new_val)
+        else:
+            return
+    else:
+        res: str = handle_response(val)
+
+    print('Bot: ', res)
+    await update.message.reply_text(res)
+
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f'Update {update} caused error {context.error}')
