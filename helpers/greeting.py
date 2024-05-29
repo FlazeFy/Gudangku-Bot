@@ -2,7 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 # Services
-from services.module.inventory.inventory_queries import get_all_inventory
+from services.module.inventory.inventory_queries import get_all_inventory, get_all_inventory_name, get_detail_inventory
 from services.module.history.history_queries import get_all_history
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -48,9 +48,20 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text="Changing password...", reply_markup=reply_markup)
     elif query.data == '9':
+        res = await get_all_inventory_name()
+        keyboard = []
+        for dt in res:
+            keyboard.append([InlineKeyboardButton(dt.inventory_name, callback_data='detail_inventory_'+dt.id)])
+            
+        keyboard.append([InlineKeyboardButton("Back", callback_data='back')])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text=f"Showing inventory...", reply_markup=reply_markup)
+    elif query.data.startswith('detail_inventory_'):
+        inventory_id = query.data.split('_')[2]
+        res = await get_detail_inventory(inventory_id)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing inventory...\n{res}", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Inventory opened...\n{res}", reply_markup=reply_markup)
     elif query.data == '0':
         await query.edit_message_text(text="Exiting bot...")
     elif query.data == 'back':
