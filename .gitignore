@@ -1,2 +1,4 @@
 /venv
 /configs
+reports/csv/report-activity.csv
+*DS_Store
