@@ -1,9 +1,11 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
+import os
 
 # Services
 from services.module.inventory.inventory_queries import get_all_inventory, get_all_inventory_name, get_detail_inventory
 from services.module.history.history_queries import get_all_history
+from services.module.report.report_queries import get_all_report
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -31,9 +33,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text="Deleting inventory...", reply_markup=reply_markup)
     elif query.data == '5':
+        res = await get_all_report()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text="Showing report...", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Showing report...\n{res}", reply_markup=reply_markup)
     elif query.data == '6':
         res = await get_all_history()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -58,7 +61,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text=f"Showing inventory...", reply_markup=reply_markup)
     elif query.data.startswith('detail_inventory_'):
         inventory_id = query.data.split('_')[2]
-        res = await get_detail_inventory(inventory_id)
+        res, img_url = await get_detail_inventory(inventory_id)
+        if img_url is not None:
+            await context.bot.send_photo(chat_id=query.message.chat_id, photo=img_url)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Inventory opened...\n{res}", reply_markup=reply_markup)

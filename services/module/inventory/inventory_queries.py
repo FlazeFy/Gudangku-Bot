@@ -1,4 +1,5 @@
 from services.module.inventory.inventory_model import inventory
+from helpers.converter import convert_price_number
 from configs.configs import con
 from sqlalchemy import select, desc, and_
 
@@ -85,29 +86,27 @@ async def get_detail_inventory(id):
     result = con.execute(query)
     data = result.first()
 
+    capacity = f"{data.inventory_capacity_vol or '-'} {data.inventory_capacity_unit or '-'}"
+    if data.inventory_capacity_unit == 'percentage' :
+        capacity = f"{data.inventory_capacity_vol or '-'}%"
+
     res = (
         f"ID : {data.id}\n\n"
         f"Name : {data.inventory_name}\n"
         f"Category : {data.inventory_category}\n"
-        f"Description : {data.inventory_desc}\n"
-        f"Merk : {data.inventory_merk}\n"
+        f"Description : {data.inventory_desc or '-'}\n"
+        f"Merk : {data.inventory_merk or '-'}\n"
         f"Room : {data.inventory_room}\n"
-        f"Storage : {data.inventory_storage}\n"
-        f"Rack : {data.inventory_rack}\n"
-        f"Price : {data.inventory_price}\n"
-        f"Image : {data.inventory_image}\n\n"
-        f"Dimenssion\n"
-        f"Unit : {data.inventory_unit}\n"
-        f"Volume : {data.inventory_vol}\n\n"
-        f"Capacity\n"
-        f"Unit : {data.inventory_capacity_unit}\n"
-        f"Volume : {data.inventory_capacity_vol}\n"
-        
-        f"Favorite : {data.is_favorite}\n"
-        f"Reminder : {data.is_reminder}\n\n"
+        f"Storage : {data.inventory_storage or '-'}\n"
+        f"Rack : {data.inventory_rack or '-'}\n"
+        f"Price : Rp. {convert_price_number(data.inventory_price)},00\n"
+        f"Dimension : {data.inventory_vol or '-'} {data.inventory_unit}\n"
+        f"Capacity : {capacity} \n\n"
+        f"{'' if data.is_favorite != 1 else 'This item is favorited'}\n"
+        f"{'' if data.is_reminder != 1 else 'This item have reminder'}\n"
         f"Props\n"
         f"Created At : {data.created_at}\n"
-        f"Updated At : {data.updated_at}\n"
+        f"Updated At : {data.updated_at or '-'}\n"
     )
 
-    return res
+    return res, data.inventory_image
