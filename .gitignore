@@ -2,3 +2,4 @@
 /configs/telegram.json
 reports/csv/report-activity.csv
 *DS_Store
+configs/email.json

@@ -1,6 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
-import os
 
 # Services
 from services.module.inventory.inventory_queries import get_all_inventory, get_all_inventory_name, get_detail_inventory
