@@ -5,6 +5,7 @@ from telegram.ext import ContextTypes
 from services.module.inventory.inventory_queries import get_all_inventory, get_all_inventory_name, get_detail_inventory
 from services.module.history.history_queries import get_all_history
 from services.module.report.report_queries import get_all_report
+from services.module.stats.stats_queries import get_stats
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -18,7 +19,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = await get_all_inventory()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing inventory...\n{res}", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Showing inventory...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
     elif query.data == '2':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -35,16 +36,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = await get_all_report()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing report...\n{res}", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Showing report...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
     elif query.data == '6':
         res = await get_all_history()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing history...\n{res}", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Showing history...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
     elif query.data == '7':
+        res = await get_stats()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text="Showing stats...", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Showing stats...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
     elif query.data == '8':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -65,7 +67,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_photo(chat_id=query.message.chat_id, photo=img_url)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Inventory opened...\n{res}", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Inventory opened...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
     elif query.data == '0':
         await query.edit_message_text(text="Exiting bot...")
     elif query.data == 'back':

@@ -37,7 +37,7 @@ async def get_all_report():
 
     for dt in data:
         res += (
-            f"Report : {dt.report_title}\n"
+            f"<b>{dt.report_title}</b>\n"
             f"Description : {dt.report_desc or '- No description provided -'}\n"
             f"Category : {dt.report_category}\n\n"
             f"Items\n"

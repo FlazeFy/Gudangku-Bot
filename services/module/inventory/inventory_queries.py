@@ -29,7 +29,7 @@ async def get_all_inventory():
 
     for dt in data:
         if inventory_category_before == '' or inventory_category_before != dt.inventory_category:
-            res += f"\nCategory: {dt.inventory_category}\n"
+            res += f"\n<b>Category: {dt.inventory_category}</b>\n"
             inventory_category_before = dt.inventory_category
         
         res += f"{i}. {dt.inventory_name}\n"
@@ -57,7 +57,6 @@ async def get_all_inventory_name():
 async def get_detail_inventory(id):
     # Query builder
     query = select(
-        inventory.c.id, 
         inventory.c.inventory_name,
         inventory.c.inventory_category,
         inventory.c.inventory_desc,
@@ -91,8 +90,7 @@ async def get_detail_inventory(id):
         capacity = f"{data.inventory_capacity_vol or '-'}%"
 
     res = (
-        f"ID : {data.id}\n\n"
-        f"Name : {data.inventory_name}\n"
+        f"<b>{data.inventory_name}</b>\n"
         f"Category : {data.inventory_category}\n"
         f"Description : {data.inventory_desc or '-'}\n"
         f"Merk : {data.inventory_merk or '-'}\n"

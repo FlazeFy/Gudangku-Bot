@@ -13,7 +13,8 @@ async def get_all_reminder():
         reminder.c.reminder_context,
         reminder.c.created_at,
         user.c.email,
-        user.c.username
+        user.c.username,
+        user.c.telegram_user_id
     ).join(
         inventory, inventory.c.id == reminder.c.inventory_id
     ).join(

@@ -8,6 +8,7 @@ user=Table(
     Column('username',String(36)),
     Column('password',String(500)),
     Column('email',String(144)),
+    Column('telegram_user_id',String(144),nullable=True),
     Column('phone',String(18)),
 
     Column('created_at',DateTime),

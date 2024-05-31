@@ -18,13 +18,13 @@ async def get_all_history():
     result = con.execute(query)
     data = result.fetchall()
 
-    res = f"Here is the history for last 30 days:\n"
+    res = f"Here is the history:\n"
     day_before = ''
 
     for dt in data:    
         if day_before == '' or day_before != dt.created_at.strftime('%d %b %Y'):
             day_before = dt.created_at.strftime('%d %b %Y')
-            res += f"\n"+day_before+"\n"
+            res += f"\n<b>"+day_before+"</b>\n"
             date = dt.created_at.strftime('%H:%M')
         else: 
             date = dt.created_at.strftime('%H:%M')

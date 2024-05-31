@@ -17,7 +17,7 @@ TOKEN: Final = config['TOKEN']
 
 if __name__ == '__main__':
     print('Bot is running')
-    asyncio.run(console_reminder())
+    # asyncio.run(console_reminder())
     app = Application.builder().token(TOKEN).build()
 
     # Command
