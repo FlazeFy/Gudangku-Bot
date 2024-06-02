@@ -6,6 +6,7 @@ from services.module.inventory.inventory_queries import get_all_inventory, get_a
 from services.module.history.history_queries import get_all_history
 from services.module.report.report_queries import get_all_report
 from services.module.stats.stats_queries import get_stats, get_dashboard
+from services.module.reminder.reminder_queries import get_my_reminder
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -73,6 +74,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Showing dashboard...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
+    elif query.data == '11':
+        res = await get_my_reminder()
+        keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text=f"Showing reminder...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
     elif query.data == '0':
         await query.edit_message_text(text="Exiting bot...")
     elif query.data == 'back':
@@ -94,6 +100,7 @@ def main_menu_keyboard():
         [InlineKeyboardButton("8. Change password", callback_data='8')],
         [InlineKeyboardButton("9. Detail inventory", callback_data='9')],
         [InlineKeyboardButton("10. Dashboard", callback_data='10')],
+        [InlineKeyboardButton("11. My Reminder", callback_data='11')],
 
         [InlineKeyboardButton("0. Exit bot", callback_data='0')]
     ]
