@@ -20,6 +20,8 @@ async def get_all_report():
         report_item, report.c.id == report_item.c.report_id, isouter=True
     ).join(
         inventory, inventory.c.id == report_item.c.inventory_id,isouter=True
+    ).where(
+        inventory.c.created_by == "2d98f524-de02-11ed-b5ea-0242ac120002",
     ).filter(
         report.c.created_by == "2d98f524-de02-11ed-b5ea-0242ac120002",
         report.c.deleted_at.is_(None)
