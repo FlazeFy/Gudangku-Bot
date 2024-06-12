@@ -2,6 +2,7 @@ from datetime import datetime
 from services.mailer.mail import send_email
 from services.mailer.fcm_notif import send_fcm_notif
 from services.module.reminder.reminder_queries import get_all_reminder
+from services.mailer.line import send_line_message
 from telegram.error import TelegramError
 from telegram import Bot
 import json
@@ -20,6 +21,8 @@ async def task_reminder_inventory():
     for dt in res:
         email = dt.email
         telegram_user_id = dt.telegram_user_id
+        firebase_fcm_token = dt.firebase_fcm_token
+        line_user_id = dt.line_user_id
         created_at_formatted = dt.created_at.strftime('%d-%b-%Y %H:%M')
 
         message_body = (f"Hello {dt.username},\n"
@@ -34,18 +37,26 @@ async def task_reminder_inventory():
         )
 
         # Send Telegram message
-        try:
-            await bot.send_message(
-                chat_id=telegram_user_id,
-                text=message_body,
-                parse_mode='HTML',
-            )
-        except TelegramError as e:
-            print(f"Failed to send message to {dt.username} ({telegram_user_id}): {e}")
-
-        # Send Notification to GudangKu Mobile Apps
-        if dt.firebase_fcm_token != None:
-            try: 
-                send_fcm_notif(dt.firebase_fcm_token, title="Inventory Reminder", body=message_body)
+        if telegram_user_id != None:
+            try:
+                await bot.send_message(
+                    chat_id=telegram_user_id,
+                    text=message_body,
+                    parse_mode='HTML',
+                )
             except TelegramError as e:
                 print(f"Failed to send message to {dt.username} ({telegram_user_id}): {e}")
+
+        # Send Notification to GudangKu Mobile Apps
+        if firebase_fcm_token != None:
+            try: 
+                send_fcm_notif(firebase_fcm_token, title="Inventory Reminder", body=message_body)
+            except TelegramError as e:
+                print(f"Failed to send message to {dt.username} ({firebase_fcm_token}): {e}")
+
+        # Send Line message
+        if line_user_id != None:
+            try: 
+                send_line_message(user_id=line_user_id, message=message_body)
+            except TelegramError as e:
+                print(f"Failed to send message to {dt.username} ({line_user_id}): {e}")
