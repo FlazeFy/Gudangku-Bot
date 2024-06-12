@@ -130,7 +130,5 @@ async def get_dashboard():
         f"<b>The Highest Price : {data_highest_price.inventory_name}</b>\n"
     )
 
-
-
     return res
 

@@ -1,9 +1,9 @@
 from datetime import datetime
 from services.mailer.mail import send_email
+from services.mailer.fcm_notif import send_fcm_notif
 from services.module.reminder.reminder_queries import get_all_reminder
 from telegram.error import TelegramError
 from telegram import Bot
-
 import json
 from typing import Final
 
@@ -42,3 +42,10 @@ async def task_reminder_inventory():
             )
         except TelegramError as e:
             print(f"Failed to send message to {dt.username} ({telegram_user_id}): {e}")
+
+        # Send Notification to GudangKu Mobile Apps
+        if dt.firebase_fcm_token != None:
+            try: 
+                send_fcm_notif(dt.firebase_fcm_token, title="Inventory Reminder", body=message_body)
+            except TelegramError as e:
+                print(f"Failed to send message to {dt.username} ({telegram_user_id}): {e}")

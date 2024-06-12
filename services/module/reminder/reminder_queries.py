@@ -14,7 +14,8 @@ async def get_all_reminder():
         reminder.c.created_at,
         user.c.email,
         user.c.username,
-        user.c.telegram_user_id
+        user.c.telegram_user_id,
+        user.c.firebase_fcm_token
     ).join(
         inventory, inventory.c.id == reminder.c.inventory_id
     ).join(

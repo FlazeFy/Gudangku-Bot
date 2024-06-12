@@ -1,3 +1,4 @@
+import re
 
 def convert_price_number(n):
     in_str = str(n)
@@ -9,3 +10,9 @@ def convert_price_number(n):
         out += r
 
     return out
+
+def clean_msg_for_notif(val):
+    val = val.replace("\n", "")
+    clean = re.compile('<.*?>')
+
+    return re.sub(clean,'',val)
