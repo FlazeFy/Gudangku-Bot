@@ -17,12 +17,12 @@ TOKEN: Final = config['TOKEN']
 
 if __name__ == '__main__':
     print('Bot is running')
-    asyncio.run(console_reminder())
-    # app = Application.builder().token(TOKEN).build()
+    # asyncio.run(console_reminder())
+    app = Application.builder().token(TOKEN).build()
 
     # # Command
-    # app.add_handler(CommandHandler('start', start_command))
-    # app.add_handler(CallbackQueryHandler(button))
+    app.add_handler(CommandHandler('start', start_command))
+    app.add_handler(CallbackQueryHandler(button))
 
-    # print('Polling...')
-    # app.run_polling(poll_interval=10)
+    print('Polling...')
+    app.run_polling(poll_interval=10)

@@ -1,5 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
+import os
 
 # Services
 from services.module.inventory.inventory_queries import get_all_inventory, get_all_inventory_name, get_detail_inventory
@@ -7,6 +8,7 @@ from services.module.history.history_queries import get_all_history
 from services.module.report.report_queries import get_all_report
 from services.module.stats.stats_queries import get_stats, get_dashboard
 from services.module.reminder.reminder_queries import get_my_reminder
+from services.module.stats.stats_capture import get_stats_capture
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -45,6 +47,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text=f"Showing history...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
     elif query.data == '7':
         res = await get_stats()
+        res_capture = await get_stats_capture()
+        if res_capture:
+            for dt in res_capture:
+                with open(dt, 'rb') as photo:
+                    await context.bot.send_photo(chat_id=query.message.chat_id, photo=photo)
+                os.remove(dt)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Showing stats...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")

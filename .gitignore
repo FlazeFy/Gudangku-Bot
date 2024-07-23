@@ -5,3 +5,4 @@ reports/csv/report-activity.csv
 configs/email.json
 configs/line.json
 configs/gudangku-94edc-firebase-adminsdk-we9nr-408864292c.json
+nlp.py
