@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, CallbackContext
 import os
 
 # Services
@@ -9,6 +9,7 @@ from services.module.report.report_queries import get_all_report
 from services.module.stats.stats_queries import get_stats, get_dashboard
 from services.module.reminder.reminder_queries import get_my_reminder
 from services.module.stats.stats_capture import get_stats_capture
+from services.module.image_processing.load import analyze_photo
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -91,6 +92,16 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text="Exiting bot...")
     elif query.data == 'back':
         await query.edit_message_text(text='What do you want:', reply_markup= main_menu_keyboard())
+
+async def handle_photo(update: Update, context: CallbackContext):
+    photo = update.message.photo[-1] 
+    file = await photo.get_file()
+    photo_path = f"received_photo_{update.message.message_id}.jpg"
+    await file.download_to_drive(photo_path)
+    await update.message.reply_text("Photo received and saved!")
+    res = await analyze_photo(photo_path)
+    await update.message.reply_text(f"Photo successfully analyze :\n{res}")
+    os.remove(photo_path)
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = main_menu_keyboard()

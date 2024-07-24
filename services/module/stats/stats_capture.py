@@ -4,14 +4,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import datetime
 import time
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import Select
 from helpers.selenium import take_screenshot
+from selenium.webdriver.common.action_chains import ActionChains
 
 async def get_stats_capture():
     driver = webdriver.Chrome()
     date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    BASEURL = 'http://127.0.0.1:8000/'
+    BASEURL = 'http://127.0.0.1:8000'
     # Test Data
     email = 'flazefy'
     password = 'nopass123'
@@ -27,20 +27,26 @@ async def get_stats_capture():
 
         # Step 3 : Pengguna menekan button submit
         driver.find_element(By.ID, 'submit_btn').click()
-        WebDriverWait(driver, 20).until(EC.url_contains(''))
+        WebDriverWait(driver, 20).until(EC.url_matches(BASEURL))
 
-        driver.find_element(By.ID, 'nav_stats_btn').click()
+        # Step 4 : Pengguna menekan menu Stats (View total by item)
+        nav_stats_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, 'nav_stats_btn'))
+        )
+        actions = ActionChains(driver)
+        actions.move_to_element(nav_stats_btn).click().perform()
+        
         WebDriverWait(driver, 20).until(EC.url_contains('stats'))
         time.sleep(3)
         take_screenshot(driver, f"item_{screenshot_path}")
 
-        # Select the toggle total (View total by price) and take a screenshot
-        select_element = driver.find_element(By.ID, 'toogle_total')
+        # Step 5 : Pengguna memilih toogle total (View total by price)
+        select_element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, 'toogle_total'))
+        )
         select = Select(select_element)
-        for option in select.options:
-            option.selected = False
-        select.select_by_index(1)
-        select_element.send_keys('\n') 
+        select.select_by_index(1) 
+        
         time.sleep(3)
         take_screenshot(driver, f"price_{screenshot_path}")
 
