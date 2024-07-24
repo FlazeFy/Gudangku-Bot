@@ -101,7 +101,7 @@ async def handle_photo(update: Update, context: CallbackContext):
         await file.download_to_drive(photo_path)
         res = await analyze_photo(photo_path)
         
-        await update.message.reply_text(f"Photo successfully analyze...\n\n{res}")
+        await update.message.reply_text(f"Photo successfully analyze...\n\n{res}", parse_mode="HTML")
     except Exception as e:
         await update.message.reply_text(f"Failed to analyze the photo: {str(e)}")
     finally:

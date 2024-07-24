@@ -50,6 +50,6 @@ async def analyze_color(url:str):
 
     closest_color_name = get_closest_color_name(r, g, b)
 
-    res = f"Color Analyze :\n- RGB : {(r, g, b)}\n- Hex : {hex_color}\n- Name : {closest_color_name}"
+    res = f"- RGB : {(r, g, b)}\n- Hex : {hex_color}\n- Name : {closest_color_name}"
 
     return res
