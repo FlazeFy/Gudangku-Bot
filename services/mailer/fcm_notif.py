@@ -3,7 +3,10 @@ from firebase_admin import credentials, messaging
 from helpers.converter import clean_msg_for_notif
 
 cred = credentials.Certificate("configs/gudangku-94edc-firebase-adminsdk-we9nr-408864292c.json")
-firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'gudangku-94edc.appspot.com',
+    'databaseURL': 'https://gudangku-94edc-default-rtdb.firebaseio.com/'
+})
 
 def send_fcm_notif(token, title, body, obj=None):
     message = messaging.Message(

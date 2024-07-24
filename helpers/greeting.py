@@ -94,14 +94,19 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text='What do you want:', reply_markup= main_menu_keyboard())
 
 async def handle_photo(update: Update, context: CallbackContext):
-    photo = update.message.photo[-1] 
-    file = await photo.get_file()
-    photo_path = f"received_photo_{update.message.message_id}.jpg"
-    await file.download_to_drive(photo_path)
-    await update.message.reply_text("Photo received and saved!")
-    res = await analyze_photo(photo_path)
-    await update.message.reply_text(f"Photo successfully analyze :\n{res}")
-    os.remove(photo_path)
+    try:
+        photo = update.message.photo[-1] 
+        file = await photo.get_file()
+        photo_path = f"received_photo_{update.message.message_id}.jpg"
+        await file.download_to_drive(photo_path)
+        res = await analyze_photo(photo_path)
+        
+        await update.message.reply_text(f"Photo successfully analyze...\n\n{res}")
+    except Exception as e:
+        await update.message.reply_text(f"Failed to analyze the photo: {str(e)}")
+    finally:
+        if os.path.exists(photo_path):
+            os.remove(photo_path)
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = main_menu_keyboard()
