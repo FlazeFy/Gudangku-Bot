@@ -14,7 +14,7 @@ async def get_all_report():
         report.c.created_at,
         func.count(1).label('total_variety'),
         func.sum(report_item.c.item_qty).label('total_item'),
-        func.group_concat(inventory.c.inventory_name, ', ').label('report_items'),
+        func.group_concat(inventory.c.inventory_name, ',').label('report_items'),
         func.sum(report_item.c.item_price * report_item.c.item_qty).label('item_price')
     ).join(
         report_item, report.c.id == report_item.c.report_id, isouter=True
@@ -39,10 +39,9 @@ async def get_all_report():
 
     for dt in data:
         res += (
-            f"<b>{dt.report_title}</b>\n"
-            f"Description : {dt.report_desc or '- No description provided -'}\n"
-            f"Category : {dt.report_category}\n\n"
-            f"Items\n"
+            f"<b>{dt.report_title}</b> ~ {dt.report_category}\n"
+            f"{dt.report_desc or '<i>- No description provided -</i>'}\n\n"
+            f"Items ({dt.total_item})\n"
         )
         if dt.report_items:
             report_items = dt.report_items.split(',')
@@ -53,12 +52,9 @@ async def get_all_report():
             res += "- No items -\n"
         
         res += (
-            f"\nTotal Item : {dt.total_item} Item\n"
-            f"\nReminder\n"
-            f"Remind At : {dt.remind_at or '-'}\n"
-            f"\nProps\n"
+            f"{'Remind At : '+dt.remind_at if dt.remind_at else ''}\n"
             f"Created At : {dt.created_at}\n"
-            f"===================================\n\n"
+            f"= = = = = = = = = = = = = = = = = = =\n\n"
         )
 
     return res

@@ -1,6 +1,5 @@
 import json
 from typing import Final
-from telegram import Update
 from telegram.ext import Application, CommandHandler,  CallbackQueryHandler, MessageHandler, filters
 
 # Cron job
@@ -19,10 +18,10 @@ if __name__ == '__main__':
     # asyncio.run(console_reminder())
     app = Application.builder().token(TOKEN).build()
 
-    # # Command
+    # Command
     app.add_handler(CommandHandler('start', start_command))
     app.add_handler(CallbackQueryHandler(button))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
     print('Polling...')
-    app.run_polling(poll_interval=10)
+    app.run_polling(poll_interval=1)

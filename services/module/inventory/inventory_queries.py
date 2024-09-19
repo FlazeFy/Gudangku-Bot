@@ -7,7 +7,11 @@ async def get_all_inventory():
     # Query builder
     query = select(
         inventory.c.inventory_name, 
-        inventory.c.inventory_category
+        inventory.c.inventory_category,
+        inventory.c.inventory_room,
+        inventory.c.inventory_storage,
+        inventory.c.inventory_unit, 
+        inventory.c.inventory_vol
     ).where(
         and_(
             inventory.c.created_by == "2d98f524-de02-11ed-b5ea-0242ac120002",
@@ -23,16 +27,19 @@ async def get_all_inventory():
     result = con.execute(query)
     data = result.fetchall()
 
-    res = f"You have {len(data)} items in your inventory.\nHere is the list:\n"
+    res = f"You have {len(data)} items in your inventory.\nHere is the list:\n\n"
     inventory_category_before = ''
     i = 1
 
     for dt in data:
         if inventory_category_before == '' or inventory_category_before != dt.inventory_category:
-            res += f"\n<b>Category: {dt.inventory_category}</b>\n"
+            res += f"= = = = = = = <b>{dt.inventory_category}</b> = = = = = = =\n\n"
             inventory_category_before = dt.inventory_category
         
-        res += f"{i}. {dt.inventory_name}\n"
+        res += (
+            f"{i}. <b>{dt.inventory_name}</b> ~ {dt.inventory_vol} {dt.inventory_unit}\n"
+            f"located at {dt.inventory_room}{' - '+dt.inventory_storage if dt.inventory_storage else ''}\n\n"
+        )
         i += 1
 
     return res

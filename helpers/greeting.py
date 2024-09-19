@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes, CallbackContext
 import os
 
 # Services
+from helpers.typography import send_long_message
 from services.module.inventory.inventory_queries import get_all_inventory, get_all_inventory_name, get_detail_inventory
 from services.module.history.history_queries import get_all_history
 from services.module.report.report_queries import get_all_report
@@ -23,7 +24,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = await get_all_inventory()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing inventory...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
+        message_chunks = send_long_message(res)
+        for chunk in message_chunks:
+            await query.edit_message_text(text=chunk, reply_markup=reply_markup, parse_mode="HTML")
     elif query.data == '2':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -40,12 +43,21 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = await get_all_report()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing report...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
+        message_chunks = send_long_message(res)
+        for chunk in message_chunks:
+            await query.edit_message_text(text=chunk, reply_markup=reply_markup, parse_mode="HTML")        
     elif query.data == '6':
-        res = await get_all_history()
+        res, type = await get_all_history()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing history...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
+        if type == 'file':
+            await query.message.reply_document(document=res, caption="Generate CSV file of history...\n\n", reply_markup=reply_markup)
+        elif type == 'text':
+            message_chunks = send_long_message(res)
+            for chunk in message_chunks:
+                await query.edit_message_text(text=chunk, reply_markup=reply_markup, parse_mode="HTML")        
+        else:
+            await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')     
     elif query.data == '7':
         res = await get_stats()
         res_capture = await get_stats_capture()
@@ -87,7 +99,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = await get_my_reminder()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing reminder...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
+        message_chunks = send_long_message(res)
+        for chunk in message_chunks:
+            await query.edit_message_text(text=chunk, reply_markup=reply_markup, parse_mode="HTML")
     elif query.data == '0':
         await query.edit_message_text(text="Exiting bot...")
     elif query.data == 'back':
