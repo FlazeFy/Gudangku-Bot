@@ -1,6 +1,25 @@
+import binascii
 from datetime import datetime
+import csv
+import io
+import random 
 
-def generate_doc_template(type):
+def get_UUID():
+    random_bytes = random.randbytes(16)
+    hex_str = binascii.hexlify(random_bytes).decode('utf-8')
+
+    time_low = hex_str[0:8]
+    time_mid = hex_str[8:12]
+    time_hi_and_version = hex_str[12:16]
+    clock_seq_hi_and_reserved = int(hex_str[16:18], 16) & 0x3f
+    clock_seq_low = int(hex_str[18:20], 16)
+    node = hex_str[20:32]
+
+    uuid = f"{time_low}-{time_mid}-{time_hi_and_version}-{clock_seq_hi_and_reserved:02x}{clock_seq_low:02x}-{node}"
+    
+    return uuid
+
+def generate_doc_template(type:str):
     current_datetime = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if(type == "footer"):
@@ -30,3 +49,15 @@ def generate_doc_template(type):
                 thead { background-color:rgba(59, 131, 246, 0.75); }
             </style>
         """
+
+def generate_csv_template(type:str, fields_name:list):
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow(fields_name)
+    output.seek(0)
+    res = output.getvalue()
+    file_bytes = io.BytesIO(res.encode('utf-8'))
+    file_bytes.name = f"{type}.csv"
+
+    return file_bytes
