@@ -84,9 +84,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text=f"Showing inventory...", reply_markup=reply_markup)
     elif query.data.startswith('detail_inventory_'):
         inventory_id = query.data.split('_')[2]
-        res, img_url = await get_detail_inventory(inventory_id)
+        res, img_url, file = await get_detail_inventory(inventory_id)
         if img_url is not None:
             await context.bot.send_photo(chat_id=query.message.chat_id, photo=img_url)
+        if file is not None:
+            await context.bot.send_document(chat_id=query.message.chat_id, filename=file.name, document=file)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Inventory opened...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
