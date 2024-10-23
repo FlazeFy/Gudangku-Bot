@@ -1,6 +1,6 @@
 from configs.configs import engine
 from services.module.inventory.inventory_model import inventory
-from sqlalchemy import select, insert, and_, update
+from sqlalchemy import select, insert, and_, update, delete
 from helpers.converter import convert_price_number
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker
@@ -556,3 +556,44 @@ async def put_inventory_query(data:dict):
         raise
     finally:
         session.close() 
+
+async def delete_inventory_query(id:str, user_id:str):
+    session = Session()
+
+    try:
+        query_select = select(
+            inventory.c.inventory_name
+        ).where(
+            and_(
+                inventory.c.id == id,
+                inventory.c.created_by == user_id
+            )
+        )
+        result_select = session.execute(query_select).first()
+
+        if result_select:
+            query_delete = (
+                delete(inventory).where(
+                    inventory.c.id == id
+                ).where(
+                    inventory.c.created_by == user_id
+                )
+            )
+            result_delete = session.execute(query_delete)
+            if result_delete.rowcount > 0:
+                await create_history(
+                    type="Delete item",
+                    ctx=result_select.inventory_name,
+                    user_id=user_id,
+                    session=session
+                )
+                return True, 'inventory has been deleted'
+            else:
+                return False, 'inventory not found'
+        else:
+            return False, 'inventory not found'
+    except Exception as e:
+        session.rollback()
+        raise
+    finally:
+        session.close()

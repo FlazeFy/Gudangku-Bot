@@ -15,7 +15,7 @@ from services.module.stats.stats_queries import get_stats, get_dashboard
 from services.module.reminder.reminder_queries import get_my_reminder
 from services.module.stats.stats_capture import get_stats_capture
 from services.module.image_processing.load import analyze_photo
-from services.module.inventory.inventory_commands import post_inventory_query, put_inventory_query
+from services.module.inventory.inventory_commands import post_inventory_query, put_inventory_query, delete_inventory_query
 from services.module.dictionary.dictionary_queries import get_all_dct
 
 async def dct_rules():
@@ -145,6 +145,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"- price, volume, and capacity volume must be numeric only and equal or more than 1 for the value\n"
             f"- is favorite must be 0 if the inventory is not favorite and 1 if the inventory is favorited\n{dct_rule}"
             ), reply_markup=reply_markup, parse_mode="HTML")
+    elif query.data.startswith('delete_inventory_'):
+        inventory_id = query.data.split('_')[2]
+        res, msg = await delete_inventory_query(id=inventory_id, user_id='2d98f524-de02-11ed-b5ea-0242ac120002')
+        keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text=msg)
 
     elif query.data == '10':
         res = await get_dashboard()
