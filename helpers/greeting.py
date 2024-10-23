@@ -15,7 +15,7 @@ from services.module.stats.stats_queries import get_stats, get_dashboard
 from services.module.reminder.reminder_queries import get_my_reminder
 from services.module.stats.stats_capture import get_stats_capture
 from services.module.image_processing.load import analyze_photo
-from services.module.inventory.inventory_commands import post_inventory_query
+from services.module.inventory.inventory_commands import post_inventory_query, put_inventory_query
 from services.module.dictionary.dictionary_queries import get_all_dct
 
 async def dct_rules():
@@ -172,7 +172,7 @@ async def handle_file(update: Update, context: CallbackContext):
         if file_ext == 'csv':
             doc_path = f"received_file_{file_name}"
 
-            if 'add inventory' in file_name.lower():
+            if 'add inventory' in file_name.replace('_',' ').lower():
                 await file.download_to_drive(doc_path)
                 df = pd.read_csv(doc_path)
                 list_val = df.iloc[0:].values  
@@ -212,8 +212,49 @@ async def handle_file(update: Update, context: CallbackContext):
                         msg_added += f"{idx+1}. ID : {res['id']}, Name : {res['inventory_name']}, Status : {'Success' if res['id'] else 'Failed'}\n"
 
                 await update.message.reply_text(f"{success_add} inventory has been added and {failed_add} inventory failed to add. Here's the summary :\n\n{msg_added}") 
+            elif 'update inventory' in file_name.replace('_',' ').lower():
+                await file.download_to_drive(doc_path)
+                df = pd.read_csv(doc_path)
+                list_val = df.iloc[0:].values  
+                success_add = 0
+                failed_add = 0
+                msg_added = ''
+                for idx, inventories in enumerate(list_val):
+                    data = {
+                        'id': str(inventories[0]).strip() if not pd.isna(inventories[0]) else None,
+                        'inventory_name': str(inventories[1]).strip() if not pd.isna(inventories[1]) else None,
+                        'inventory_category': str(inventories[2]).strip() if not pd.isna(inventories[2]) else None,
+                        'inventory_desc': str(inventories[3]).strip() if not pd.isna(inventories[3]) else None,
+                        'inventory_merk': str(inventories[4]).strip() if not pd.isna(inventories[4]) else None,
+                        'inventory_room': str(inventories[5]).strip() if not pd.isna(inventories[5]) else None,
+                        'inventory_storage': str(inventories[6]).strip() if not pd.isna(inventories[6]) else None,
+                        'inventory_rack': str(inventories[7]).strip() if not pd.isna(inventories[7]) else None,
+                        'inventory_price': inventories[8] if not pd.isna(inventories[8]) else None,
+                        'inventory_unit': str(inventories[9]).strip() if not pd.isna(inventories[9]) else None,
+                        'inventory_vol': inventories[10] if not pd.isna(inventories[10]) else None,
+                        'inventory_capacity_unit': str(inventories[11]).strip() if not pd.isna(inventories[11]) else None,
+                        'inventory_capacity_vol': inventories[12] if not pd.isna(inventories[12]) else None,
+                        'is_favorite': inventories[13] if not pd.isna(inventories[13]) else None,
+                        'created_by': '2d98f524-de02-11ed-b5ea-0242ac120002',
+                    }
+                    res = await put_inventory_query(data=data)
+                    if res['status']:
+                        success_add += 1
+                        if res['extra']:
+                            await update.message.reply_document(filename=f"inventory_{res['id']}_{res['inventory_name']}.pdf", document=res['extra'])
+                        else:
+                            await update.message.reply_text(f"Failed to generate report of inventory : {res['inventory_name']}") 
+                    else:
+                        failed_add += 1
+
+                    if res['extra'] is not None and isinstance(res['extra'], str):
+                        msg_added += f"{idx+1}. ID : -, Name : {res['inventory_name']}, Status : {res['extra']}\n"
+                    else:
+                        msg_added += f"{idx+1}. ID : {res['id']}, Name : {res['inventory_name']}, Status : {'Success' if res['id'] else 'Failed'}\n"
+
+                await update.message.reply_text(f"{success_add} inventory has been updated and {failed_add} inventory failed to updated. Here's the summary :\n\n{msg_added}") 
             else:
-                await update.message.reply_text(text=f"We dont know what purpose of these document. Please specify a name like 'Add Inventory'")
+                await update.message.reply_text(text=f"We dont know what purpose of these document. Please specify a name like 'Add Inventory' or 'Update Inventory'")
         else:
             await update.message.reply_text(text=f"Your file is not compatible for me to handle")
     except Exception as e:

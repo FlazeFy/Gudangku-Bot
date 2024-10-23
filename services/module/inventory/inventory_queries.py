@@ -124,6 +124,15 @@ async def get_detail_inventory(id:str, type:str):
         style_template = generate_doc_template(type="style")
         header_template = generate_doc_template(type="header")
         footer_template = generate_doc_template(type="footer")
+        img_element = ''
+        if data.inventory_image:
+            img_element = f"""
+                <tr>
+                    <th>Image</th>
+                    <td style='text-align:center;'><img src='{data.inventory_image}' style='width:200px;height:200px; margin-bottom: 20px;'></td>
+                </tr>
+                """
+            
         res_doc = f"""
         <html>
             <head>
@@ -138,9 +147,10 @@ async def get_detail_inventory(id:str, type:str):
                     At {data.created_at}, this document has been generated from the inventory called <b>{data.inventory_name}</b>. 
                     You can also import this document into GudangKu Apps or send it to our Telegram Bot if you wish to analyze the inventory.
                     Important to know, that this document is <b>accessible for everyone</b> by using this link. Here you can see the item in this report:
-                </p>                    
+                </p>
                 <table>
                     <tbody>
+                        {img_element}
                         <tr>
                             <th>Description</th>
                             <td>{data.inventory_desc or '-'}</td>
@@ -184,7 +194,7 @@ async def get_detail_inventory(id:str, type:str):
                         <tr>
                             <th>Is Reminder</th>
                             <td>{'Yes' if data.is_reminder == 1 else 'No'}</td>
-                        </tr>
+                        </tr>              
                     </tbody>
                 </table>
                 {footer_template}
@@ -207,12 +217,13 @@ async def get_detail_inventory(id:str, type:str):
 
         # Header
         writer.writerow([
-            'inventory_name', 'inventory_category', 'inventory_desc', 'inventory_merk', 'inventory_room', 'inventory_storage', 
+            'id','inventory_name', 'inventory_category', 'inventory_desc', 'inventory_merk', 'inventory_room', 'inventory_storage', 
             'inventory_rack', 'inventory_price', 'inventory_unit', 'inventory_vol', 'inventory_capacity_unit', 
             'inventory_capacity_vol', 'is_favorite'
         ])
 
         writer.writerow([
+            data.id,
             data.inventory_name, 
             data.inventory_category,
             data.inventory_desc,
@@ -225,7 +236,7 @@ async def get_detail_inventory(id:str, type:str):
             data.inventory_vol,
             data.inventory_capacity_unit,
             data.inventory_capacity_vol,
-            'True' if data.is_favorite == 1 else 'False'
+            data.is_favorite
         ])
 
         output.seek(0)
@@ -233,7 +244,7 @@ async def get_detail_inventory(id:str, type:str):
         now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         file_bytes = io.BytesIO(res.encode('utf-8'))
-        file_bytes.name = f"update inventory_at_{now_str}.csv"
+        file_bytes.name = f"update inventory at {now_str}.csv"
 
         res_txt = (
             f"Here's the updateable field of inventory <b>{data.inventory_name}</b> in CSV format. Send me new data of this inventory if you have finished updated.\n\n"
