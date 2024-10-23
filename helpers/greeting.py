@@ -131,47 +131,58 @@ async def handle_file(update: Update, context: CallbackContext):
         file_name = doc.file_name
         file_ext = os.path.splitext(file_name)[1].replace('.','')
         if file_ext == 'csv':
-            doc_path = f"received_file_{doc.file_name}"
-            await file.download_to_drive(doc_path)
-            # A2:N2 => [1:2, 0:14]
-            df = pd.read_csv(doc_path)
-            # range = df.iloc[1:2, 0:14]
-            list_val = df.iloc[0:].values  
-            value_data = 'Data 1 :\n'
-            for idx, inventories in enumerate(list_val):
-                # for dt in inventories:
-                #     value_data += f"{dt}\n"
-                data = {
-                    'inventory_name': inventories[0],
-                    'inventory_category': inventories[1],
-                    'inventory_desc': inventories[2] if inventories[2].strip() != "" else None,
-                    'inventory_merk': inventories[3] if inventories[3].strip() != "" else None,
-                    'inventory_room': inventories[4],
-                    'inventory_storage': inventories[5] if inventories[5].strip() != "" else None,
-                    'inventory_rack': inventories[6] if inventories[6].strip() != "" else None,
-                    'inventory_price': inventories[7],
-                    'inventory_unit': inventories[8],
-                    'inventory_vol': inventories[9],
-                    'inventory_capacity_unit': inventories[10] if inventories[10].strip() != "" else None,
-                    'inventory_capacity_vol': inventories[11] if inventories[11] != "" else None,
-                    'is_favorite': inventories[12],
-                    'created_by': '2d98f524-de02-11ed-b5ea-0242ac120002',
-                }
-                await post_inventory_query(data=data)
-                value_data += f"\nData ${idx} :\n"
+            doc_path = f"received_file_{file_name}"
 
-            await update.message.reply_document(
-                document=doc, 
-                caption=f"The inventory has been added. Here's the previous CSV with updated columns for success insert:\n\n"
-            ) 
+            if 'add inventory' in file_name.lower():
+                await file.download_to_drive(doc_path)
+                df = pd.read_csv(doc_path)
+                list_val = df.iloc[0:].values  
+                success_add = 0
+                failed_add = 0
+                msg_added = ''
+                for idx, inventories in enumerate(list_val):
+                    data = {
+                        'inventory_name': str(inventories[0]).strip() if not pd.isna(inventories[0]) else None,
+                        'inventory_category': str(inventories[1]).strip() if not pd.isna(inventories[1]) else None,
+                        'inventory_desc': str(inventories[2]).strip() if not pd.isna(inventories[2]) else None,
+                        'inventory_merk': str(inventories[3]).strip() if not pd.isna(inventories[3]) else None,
+                        'inventory_room': str(inventories[4]).strip() if not pd.isna(inventories[4]) else None,
+                        'inventory_storage': str(inventories[5]).strip() if not pd.isna(inventories[5]) else None,
+                        'inventory_rack': str(inventories[6]).strip() if not pd.isna(inventories[6]) else None,
+                        'inventory_price': inventories[7] if not pd.isna(inventories[7]) else None,
+                        'inventory_unit': str(inventories[8]).strip() if not pd.isna(inventories[8]) else None,
+                        'inventory_vol': inventories[9] if not pd.isna(inventories[9]) else None,
+                        'inventory_capacity_unit': str(inventories[10]).strip() if not pd.isna(inventories[10]) else None,
+                        'inventory_capacity_vol': inventories[11] if not pd.isna(inventories[11]) else None,
+                        'is_favorite': inventories[12] if not pd.isna(inventories[12]) else None,
+                        'created_by': '2d98f524-de02-11ed-b5ea-0242ac120002',
+                    }
+                    res = await post_inventory_query(data=data)
+                    if res['status']:
+                        success_add += 1
+                        if res['extra']:
+                            await update.message.reply_document(filename=f"inventory_{res['id']}_{res['inventory_name']}.pdf", document=res['extra'])
+                        else:
+                            await update.message.reply_text(f"Failed to generate report of inventory : {res['inventory_name']}") 
+                    else:
+                        failed_add += 1
+
+                    if res['extra'] is not None and isinstance(res['extra'], str):
+                        msg_added += f"{idx+1}. ID : -, Name : {res['inventory_name']}, Status : {res['extra']}\n"
+                    else:
+                        msg_added += f"{idx+1}. ID : {res['id']}, Name : {res['inventory_name']}, Status : {'Success' if res['id'] else 'Failed'}\n"
+
+                await update.message.reply_text(f"{success_add} inventory has been added and {failed_add} inventory failed to add. Here's the summary :\n\n{msg_added}") 
+            else:
+                await update.message.reply_text(text=f"We dont know what purpose of these document. Please specify a name like 'Add Inventory'")
         else:
             await update.message.reply_text(text=f"Your file is not compatible for me to handle")
     except Exception as e:
-        await update.message.reply_text(f"Failed to analyze the file: {str(e)}")
+        await update.message.reply_text(f"Failed to import the file: {str(e)}")
     finally:
         if os.path.exists(doc_path):
             os.remove(doc_path)
-        
+
 async def handle_photo(update: Update, context: CallbackContext):
     try:
         photo = update.message.photo[-1] 
