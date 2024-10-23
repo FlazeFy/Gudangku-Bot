@@ -10,7 +10,7 @@ from services.module.history.history_command import create_history
 import io
 from xhtml2pdf import pisa
 from helpers.generator import generate_doc_template
-from services.module.dictionary.dictionary_model import dictionary
+from services.module.dictionary.dictionary_queries import get_all_dct 
 
 Session = sessionmaker(bind=engine)
 
@@ -97,13 +97,7 @@ async def post_inventory_query(data:dict):
                 errors_validation += inventory_capacity_vol_validate
 
             # Dictionary get
-            query_dct = select(
-                dictionary.c.dictionary_type,
-                dictionary.c.dictionary_name
-            )
-            result_dct = session.execute(query_dct)
-            dcts = result_dct.fetchall()
-
+            dcts = await get_all_dct(session)
             dct_cat = []
             dct_room = []
             dct_unit = []

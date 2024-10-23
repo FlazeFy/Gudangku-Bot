@@ -2,6 +2,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, CallbackContext
 import os
 import pandas as pd
+from configs.configs import engine
+from sqlalchemy.orm import sessionmaker
 
 # Services
 from helpers.typography import send_long_message
@@ -14,6 +16,23 @@ from services.module.reminder.reminder_queries import get_my_reminder
 from services.module.stats.stats_capture import get_stats_capture
 from services.module.image_processing.load import analyze_photo
 from services.module.inventory.inventory_commands import post_inventory_query
+from services.module.dictionary.dictionary_queries import get_all_dct
+
+async def dct_rules():
+    Session = sessionmaker(bind=engine)
+    session = Session() 
+    
+    dcts = await get_all_dct(session)
+    res =''
+
+    cat_before = ''
+    for dt in dcts:
+        if cat_before == '' or dt.dictionary_type != cat_before:
+            res += f'\n{dt.dictionary_type} must be \n'
+            cat_before = dt.dictionary_type
+        res += f'- {dt.dictionary_name}\n'
+
+    return res
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -29,31 +48,44 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         message_chunks = send_long_message(res)
         for chunk in message_chunks:
-            await query.edit_message_text(text=chunk, reply_markup=reply_markup, parse_mode="HTML")
-    elif query.data == '3':
+            await query.edit_message_text(text=chunk, reply_markup=reply_markup, parse_mode="HTML")        
+    elif query.data == '2' or query.data == '3' or query.data == '4' or query.data == '5':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        template_inventory_add = generate_csv_template(type='Add Inventory',
+        
+        if query.data == '3':
+            template_inventory_add = generate_csv_template(type='Add Inventory',
             fields_name=['inventory_name', 'inventory_category', 'inventory_desc', 'inventory_merk', 'inventory_room', 'inventory_storage', 
                          'inventory_rack', 'inventory_price', 'inventory_unit', 'inventory_vol', 'inventory_capacity_unit', 
                          'inventory_capacity_vol', 'is_favorite'])
-        await query.message.reply_document(document=template_inventory_add, 
-            caption=(
-                f"Generate CSV form of create inventory...\n\n"
-                f"Rules to follow :\n"
-                f" - name, category, room, price, unit, volume, is favorite is a mandatory field\n"
-                f" - price, volume, and capacity volume must be numeric only and equal or more than 1 for the value\n"
-                f" - is favorite must be 0 if the inventory is not favorite and 1 if the inventory is favorited\n"
-            ))
-        await query.edit_message_text(text="Fill this form below and send back to me when you want to submit it...", reply_markup=reply_markup)
-    elif query.data == '4':
-        keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text="Updating inventory...", reply_markup=reply_markup)
-    elif query.data == '5':
-        keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text="Deleting inventory...", reply_markup=reply_markup)
+            
+            dct_rule = await dct_rules()
+            await query.message.reply_document(document=template_inventory_add, 
+                caption=(
+                    f"Generate CSV form of create inventory...\n\n"
+                    f"Rules to follow :\n"
+                    f"- name, category, room, price, unit, volume, is favorite is a mandatory field\n"
+                    f"- price, volume, and capacity volume must be numeric only and equal or more than 1 for the value\n"
+                    f"- is favorite must be 0 if the inventory is not favorite and 1 if the inventory is favorited\n{dct_rule}"
+                ))
+            await query.edit_message_text(text="Fill this form below and send back to me when you want to submit it...", reply_markup=reply_markup)
+        else: 
+            res = await get_all_inventory_name()
+            keyboard = []
+            command = ''
+            if query.data == '2':
+                command = 'detail_inventory_'
+            elif query.data == '4':
+                command = 'update_inventory_'
+            elif query.data == '5':
+                command = 'delete_inventory_'
+            for dt in res:
+                keyboard.append([InlineKeyboardButton(dt.inventory_name, callback_data=command+dt.id)])
+                
+            keyboard.append([InlineKeyboardButton("Back", callback_data='back')])
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(text=f"Showing inventory...", reply_markup=reply_markup)
+
     elif query.data == '6':
         res = await get_all_report()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -88,18 +120,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text="Changing password...", reply_markup=reply_markup)
-    elif query.data == '2':
-        res = await get_all_inventory_name()
-        keyboard = []
-        for dt in res:
-            keyboard.append([InlineKeyboardButton(dt.inventory_name, callback_data='detail_inventory_'+dt.id)])
-            
-        keyboard.append([InlineKeyboardButton("Back", callback_data='back')])
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing inventory...", reply_markup=reply_markup)
+
     elif query.data.startswith('detail_inventory_'):
         inventory_id = query.data.split('_')[2]
-        res, img_url, file = await get_detail_inventory(inventory_id)
+        res, img_url, file = await get_detail_inventory(id=inventory_id, type='detail')
         if img_url is not None:
             await context.bot.send_photo(chat_id=query.message.chat_id, photo=img_url)
         if file is not None:
@@ -107,6 +131,21 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Inventory opened...\n\n{res}", reply_markup=reply_markup, parse_mode="HTML")
+    elif query.data.startswith('update_inventory_'):
+        inventory_id = query.data.split('_')[2]
+        res, img_url, file = await get_detail_inventory(id=inventory_id, type='update')
+        dct_rule = await dct_rules()
+        await context.bot.send_document(chat_id=query.message.chat_id, filename=file.name, document=file)
+        keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text=(
+            f"Inventory opened...\n\n{res}\n"
+            f"Rules to follow :\n"
+            f"- name, category, room, price, unit, volume, is favorite is a mandatory field\n"
+            f"- price, volume, and capacity volume must be numeric only and equal or more than 1 for the value\n"
+            f"- is favorite must be 0 if the inventory is not favorite and 1 if the inventory is favorited\n{dct_rule}"
+            ), reply_markup=reply_markup, parse_mode="HTML")
+
     elif query.data == '10':
         res = await get_dashboard()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
