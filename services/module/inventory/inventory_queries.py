@@ -13,17 +13,19 @@ async def get_all_inventory():
     query = select(
         inventory.c.inventory_name, 
         inventory.c.inventory_category,
+        inventory.c.inventory_merk,
+        inventory.c.inventory_desc,
         inventory.c.inventory_room,
         inventory.c.inventory_storage,
+        inventory.c.inventory_rack,
+        inventory.c.inventory_price,
         inventory.c.inventory_unit, 
-        inventory.c.inventory_vol
+        inventory.c.inventory_vol,
+        inventory.c.inventory_capacity_unit, 
+        inventory.c.inventory_capacity_vol
     ).where(
-        and_(
-            inventory.c.created_by == "2d98f524-de02-11ed-b5ea-0242ac120002",
-            inventory.c.deleted_at.is_(None) 
-        )
+        inventory.c.created_by == "2d98f524-de02-11ed-b5ea-0242ac120002"
     ).order_by(
-        desc(inventory.c.inventory_category),
         desc(inventory.c.is_favorite),
         desc(inventory.c.created_at)
     )
@@ -33,21 +35,72 @@ async def get_all_inventory():
     data = result.fetchall()
 
     res = f"You have {len(data)} items in your inventory.\nHere is the list:\n\n"
-    inventory_category_before = ''
-    i = 1
 
-    for dt in data:
-        if inventory_category_before == '' or inventory_category_before != dt.inventory_category:
-            res += f"= = = = = = = <b>{dt.inventory_category}</b> = = = = = = =\n\n"
-            inventory_category_before = dt.inventory_category
+    for idx, dt in enumerate(data):
+        capacity_element = ''
+        if dt.inventory_capacity_vol:
+            capacity_element = f"\nCapacity : {dt.inventory_capacity_vol} {dt.inventory_capacity_unit}"
         
         res += (
-            f"{i}. <b>{dt.inventory_name}</b> ~ {dt.inventory_vol} {dt.inventory_unit}\n"
-            f"located at {dt.inventory_room}{' - '+dt.inventory_storage if dt.inventory_storage else ''}\n\n"
+            f"{idx+1}. <b>{dt.inventory_name}</b>\n"
+            f"Category / Merk : {dt.inventory_category} / {dt.inventory_merk}\n"
+            f"Description :\n"
+            f"{dt.inventory_desc or '<i>- No Description Provided -</i>'}\n"
+            f"Room : {dt.inventory_room}\n"
+            f"Storage / Rack : {dt.inventory_storage or '-'} / {dt.inventory_rack or '-'}\n"
+            f"Price : Rp. {dt.inventory_price}\n"
+            f"Unit : {dt.inventory_vol} {dt.inventory_unit}{capacity_element}\n\n"
         )
-        i += 1
 
     return res
+
+async def get_all_inventory_export():
+    # Query builder
+    query = select(inventory
+    ).where(
+        inventory.c.created_by == "2d98f524-de02-11ed-b5ea-0242ac120002"
+    ).order_by(
+        desc(inventory.c.is_favorite),
+        desc(inventory.c.created_at)
+    )
+
+    # Exec
+    result = con.execute(query)
+    data = result.fetchall()
+
+    if len(data) > 0:
+        list_file = []
+        part = 1
+        output = None
+
+        column_names = inventory.c.keys()
+
+        for idx, dt in enumerate(data):
+            if idx % 99 == 0:
+                if output is not None:
+                    output.seek(0)
+                    res = output.getvalue() 
+                    file_bytes = io.BytesIO(res.encode('utf-8'))
+                    file_bytes.name = f'Pin_List_Part-{part}.csv'
+                    list_file.append(file_bytes)
+                    part += 1
+                
+                output = io.StringIO()
+                writer = csv.writer(output)
+                writer.writerow(column_names)
+
+            writer.writerow([dt[i] for i in range(len(column_names))])
+
+        if output is not None:
+            output.seek(0)
+            res = output.getvalue() 
+            file_bytes = io.BytesIO(res.encode('utf-8'))
+            file_bytes.name = f'Inventory Data_Part-{part}.csv'
+            list_file.append(file_bytes)
+
+        return list_file, True
+    else:
+        return "No inventory found", False
 
 async def get_all_inventory_name():
     # Query builder

@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 # Services
 from helpers.typography import send_long_message
 from helpers.generator import generate_csv_template
-from services.module.inventory.inventory_queries import get_all_inventory, get_all_inventory_name, get_detail_inventory
+from services.module.inventory.inventory_queries import get_all_inventory, get_all_inventory_name, get_detail_inventory, get_all_inventory_export
 from services.module.history.history_queries import get_all_history
 from services.module.report.report_queries import get_all_report
 from services.module.stats.stats_queries import get_stats, get_dashboard
@@ -48,7 +48,21 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         message_chunks = send_long_message(res)
         for chunk in message_chunks:
-            await query.edit_message_text(text=chunk, reply_markup=reply_markup, parse_mode="HTML")        
+            await query.edit_message_text(text=chunk, reply_markup=reply_markup, parse_mode="HTML")       
+    elif query.data == '1/csv':
+        res, is_success =  await get_all_inventory_export()
+        keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        if is_success:
+            if len(res) == 1:
+                await query.edit_message_text(text=f"Generate Exported CSV file of pin...", parse_mode='HTML')     
+            else:     
+                await query.edit_message_text(text=f"Generate Exported CSV file of pin...\nSpliting into {len(res)} parts. Each of these have maximum 100 inventory", parse_mode='HTML')     
+            for idx, dt in enumerate(res):
+                await query.message.reply_document(document=dt, caption=f"Part-{idx+1}\n")
+            await query.edit_message_text(text=f"Export finished", parse_mode='HTML',reply_markup= main_menu_keyboard(),)     
+        else:
+            await query.edit_message_text(text=f"<i>- {res} -</i>", reply_markup= main_menu_keyboard(), parse_mode='HTML')       
     elif query.data == '2' or query.data == '3' or query.data == '4' or query.data == '5':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -291,6 +305,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 def main_menu_keyboard():
     keyboard = [
         [InlineKeyboardButton("1. Show inventory", callback_data='1')],
+        [InlineKeyboardButton("1. Save inventory as CSV", callback_data='1/csv')],
         [InlineKeyboardButton("2. Detail inventory", callback_data='2')],
         [InlineKeyboardButton("3. Add inventory", callback_data='3')],
         [InlineKeyboardButton("4. Update inventory", callback_data='4')],
